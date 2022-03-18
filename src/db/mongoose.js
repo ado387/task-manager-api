@@ -22,3 +22,22 @@ const User = mongoose.model( 'User', {
 // 	console.log( 'Error ', error );
 // });
 
+const Task = mongoose.model( 'Task', {
+	description: {
+		type: String
+	},
+	completed: {
+		type: Boolean
+	}
+})
+
+const newTask = new Task({
+	description: 'Finish up ClickUp tasks',
+	completed: false,
+});
+
+newTask.save().then( result => {
+	console.log( result );
+}).catch( error => {
+	console.log( error );
+});
