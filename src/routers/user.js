@@ -44,6 +44,15 @@ router.post( '/users', async ( req, res ) => {
 	}
 });
 
+router.post( '/users/login', async ( req, res ) => {
+	try {
+		const user = await User.findByCredentials( req.body.email, req.body.password );
+		res.send( user );
+	} catch (error) {
+		res.status( 400 ).send();
+	}
+});
+
 router.patch( '/users/:id', async ( req, res ) => {
 	// Validate updated fields.
 	const updates = Object.keys( req.body );
