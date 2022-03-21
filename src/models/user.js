@@ -1,7 +1,8 @@
 const mongoose  = require( 'mongoose' );
 const validator = require( 'validator' );
+const bcrypt    = require( 'bcryptjs' );
 
-const User = mongoose.model( 'User', {
+const userSchema = new mongoose.Schema({
 	name: {
 		type: String,
 		required: true,
@@ -24,11 +25,6 @@ const User = mongoose.model( 'User', {
 		trim: true,
 		minlength: 7,
 		validate( value ) {
-			// Use minlength dummy :)
-			// if ( value.length < 7 ) {
-			// 	throw new Error( 'Password must contain at least 7 characters' );
-			// }
-
 			if ( value.includes( 'password' ) ) {
 				throw new Error( "Password must not contains word 'password'" );
 			}
@@ -38,17 +34,23 @@ const User = mongoose.model( 'User', {
 		type: Number,
 		default: 0,
 		validate( value ) {
-			// This is useless because value is already coerced to number by this point.
-			// if ( typeof value !== 'number' ) {
-			// 	console.log( 'typeof error');
-			// 	throw new Error( 'Age must be a number' );
-			// }
-
 			if ( value < 0 ) {
 				throw new Error( 'Age must be a positive number' );
 			}
 		}
 	}
 });
+
+userSchema.pre( 'save', async function( next ) {
+	const user = this;
+
+	if ( user.isModified( 'password' ) ) {
+		user.password = await bcrypt.hash( user.password, 8 );
+	}
+
+	next();
+});
+
+const User = mongoose.model( 'User', userSchema );
 
 module.exports = User;
