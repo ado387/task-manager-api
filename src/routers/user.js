@@ -71,7 +71,7 @@ router.post( '/users/logoutAll', auth, async ( req, res ) => {
 	}
 });
 
-router.patch( '/users/:id', async ( req, res ) => {
+router.patch( '/users/me', auth, async ( req, res ) => {
 	// Validate updated fields.
 	const updates          = Object.keys( req.body );
 	const allowedUpdates   = [ 'name', 'email', 'password', 'age' ];
@@ -84,34 +84,19 @@ router.patch( '/users/:id', async ( req, res ) => {
 
 	// Try to apply updates.
 	try {
-		const user = await User.findById( req.params.id );
-
-		updates.forEach( update => user[update] = req.body[update] );
-
-		await user.save();
-		
-		if ( ! user ) {
-			res.status( 404 ).send();
-			return;
-		}
-
-		res.send( user );
+		updates.forEach( update => req.user[update] = req.body[update] );
+		await req.user.save();
+		res.send( req.user );
 	}
 	catch ( e ) {
 		res.status( 400 ).send();
 	}
 });
 
-router.delete( '/users/:id', async ( req, res ) => {
+router.delete( '/users/me', auth, async ( req, res ) => {
 	try {
-		const user = await User.findByIdAndDelete( req.params.id );
-
-		if ( ! user ) {
-			res.status( 404 ).send()
-			return;
-		}
-
-		res.send( user );
+		await req.user.remove();
+		res.send( req.user );
 	} catch (error) {
 		res.status( 500 ).send();
 	}
