@@ -1,10 +1,28 @@
 
 const express = require( 'express' );
-const { JsonWebTokenError } = require('jsonwebtoken');
-const User = require( '../models/user' );
-const router  = new express.Router();
-const auth = require( '../middleware/auth' );
+const multer  = require( 'multer' );
+const User    = require( '../models/user' );
+const auth    = require( '../middleware/auth' );
 
+const router       = new express.Router();
+const multerAvatar = multer({
+	limits: {
+		fileSize: 1000000, // Milion bytes, 1MB
+	},
+	fileFilter( req, file, cb ) {
+		if ( ! file.originalname.match( /\.(jpg|jpeg|png)$/ )) {
+			cb( new Error( 'File must be either jpg, jpeg, or png.' ) );
+			return;
+		}
+		
+		cb( undefined, true );
+	}
+});
+
+
+/****************************
+ * GET Requests
+ ****************************/
 router.get( '/users/me', auth, async ( req, res ) => {
 	res.send( req.user );
 });
@@ -27,6 +45,25 @@ router.get( '/users/:id', async ( req, res ) => {
 	}
 });
 
+router.get( '/users/:id/avatar', async( req, res ) => {
+	try {
+		const user = await User.findById( req.params.id );
+
+		if ( ! user || ! user.avatar ) {
+			throw new Error();
+		}
+
+		res.set( 'Content-Type', 'image/jpg' );
+		res.send( user.avatar );
+	} catch (error) {
+		res.status( 404 ).send();
+	}
+});
+
+
+/****************************
+ * POST Requests
+ ****************************/
 router.post( '/users', async ( req, res ) => {
 	const user  = new User( req.body );
 
@@ -71,6 +108,18 @@ router.post( '/users/logoutAll', auth, async ( req, res ) => {
 	}
 });
 
+router.post( '/users/me/avatar', auth, multerAvatar.single( 'avatar' ),	async ( req, res ) => {
+		req.user.avatar = req.file.buffer;
+		await req.user.save();
+		res.send();
+	}, ( error, req, res, next ) => {
+		res.status( 400 ).send( { error: error.message } );
+	}
+);
+
+/****************************
+ * UPDATE Requests
+ ****************************/
 router.patch( '/users/me', auth, async ( req, res ) => {
 	// Validate updated fields.
 	const updates          = Object.keys( req.body );
@@ -93,6 +142,10 @@ router.patch( '/users/me', auth, async ( req, res ) => {
 	}
 });
 
+
+/****************************
+ * DELETE Request
+ ****************************/
 router.delete( '/users/me', auth, async ( req, res ) => {
 	try {
 		await req.user.remove();
@@ -100,6 +153,12 @@ router.delete( '/users/me', auth, async ( req, res ) => {
 	} catch (error) {
 		res.status( 500 ).send();
 	}
+});
+
+router.delete( '/users/me/avatar', auth, async( req, res ) => {
+	req.user.avatar = undefined;
+	await req.user.save();
+	res.send();
 });
 
 module.exports = router;
