@@ -1,12 +1,12 @@
 const express = require( 'express' );
 
-require( './src/db/mongoose' );
+require( './db/mongoose' );
 
-const Task = require( './src/models/task' );
-const User = require( './src/models/user' );
+const Task = require( './models/task' );
+const User = require( './models/user' );
 
-const UserRouter = require( './src/routers/user' );
-const TaskRouter = require( './src/routers/task' );
+const UserRouter = require( './routers/user' );
+const TaskRouter = require( './routers/task' );
 
 const app  = express();
 const port = process.env.PORT;
